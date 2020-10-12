@@ -1,16 +1,107 @@
 <!doctype html>
 <html lang="en">
 
-	@@include('./slides/head.html')
+		<head>
+		<meta charset="utf-8">
+
+		<title>STN Performance</title>
+
+		<meta name="description" content="Performance Analysis">
+		<meta name="author" content="Samuel Ruwe">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/black.css" id="theme">
+
+		<link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
+	</head>
+
+
+
 	<body>
 
 		<div class="reveal">
 
 			<div class="slides">
-				@@include('./slides/intro.html')
-				@@include('./slides/performanceList.html')
-				@@include('./slides/performance/match.html')
-				@@include('./slides/performance/matchCode.html')
+				<section>
+	<h2 class="fragment fade-in">
+		An Uncomfortably 
+		<br>Close Look at Performance 
+		<br>in STNext
+	</h2>
+	<p class="fragment slide-up">
+		<small>Created by <a href="https://github.com/SamuelRuwe">Samuel Ruwe</a></small>
+	</p>
+</section>
+
+
+
+				<section>
+	<h2>Problems in STNext</h2>
+	<ul>
+		<li class="fragment fade-in-then-semi-out">Pattern Matching</li>
+		<li class="fragment fade-in-then-semi-out">Image Blocking</li>
+		<li class="fragment fade-in-then-semi-out">Reprocessing Data</li>
+		<li class="fragment fade-in-then-semi-out">Large Buffer Sizes</li>
+		<li class="fragment fade-in-then-semi-out">Initializing Excess Objects</li>
+		<li class="fragment fade-in-then-semi-out">Data Accumulation</li>
+		<li class="fragment fade-in-then-semi-out">Inefficient Algorithms</li>
+		<li class="fragment fade-in">Early Data Retrieval</li>
+	</ul>
+</section>
+
+
+
+				<section>
+	<section>
+		<h2>Problem</h2>
+		<p class="fragment fade-up">
+			We spend an excessive amount of
+			time processing the response from messenger in regular expressions.
+		</p>
+	</section>
+	<section>
+	<pre data-id="code-animation"><code class="hljs stretch" data-trim data-line-numbers>
+		void handleNewlyCapturedTelnetInput (char newlyCaptured) {
+		UserSessionState sessionState = sessionStateService.getSessionState(user);
+
+		bufferService.appendNewlyCapturedInputToBuffer(newlyCaptured, user);
+
+	    checkForSegments(newlyCaptured, sessionState);
+		}
+		</code></pre>
+	</section>	
+	<section>
+		<h2>Solution</h2>
+		<p>
+			While this is definitely a major time sink, it is related 
+			more to how we choose to process data than the java algorithm. The 
+			benefit from attempting to improve this would likely be minimal. As 
+			such, I recommend we don't attempt to adjust this until we have fixed 
+			the other problem areas.
+		</p>
+	</section>
+	<section>
+		<p>ooh code is here</p>
+	</section>
+</section>
+
+				<section>
+<h2 data-id="code-title">Pretty Code</h2>
+<pre data-id="code-animation"><code class="hljs" data-trim data-line-numbers>
+	    void handleNewlyCapturedTelnetInput (char newlyCaptured) {
+        UserSessionState sessionState = sessionStateService.getSessionState(user);
+
+        bufferService.appendNewlyCapturedInputToBuffer(newlyCaptured, user);
+
+        checkForSegments(newlyCaptured, sessionState);
+    }
+	</code></pre>
+<p>Code syntax highlighting courtesy of <a href="https://highlightjs.org/usage/">highlight.js</a>.</p>
+</section>	
+
 
 				<section data-auto-animate>
 					<h2 data-id="code-title">Pretty Code</h2>

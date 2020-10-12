@@ -1,0 +1,13 @@
+<section>
+<h2 data-id="code-title">Pretty Code</h2>
+<pre data-id="code-animation"><code class="hljs" data-trim data-line-numbers>
+	    void handleNewlyCapturedTelnetInput (char newlyCaptured) {
+        UserSessionState sessionState = sessionStateService.getSessionState(user);
+
+        bufferService.appendNewlyCapturedInputToBuffer(newlyCaptured, user);
+
+        checkForSegments(newlyCaptured, sessionState);
+    }
+	</code></pre>
+<p>Code syntax highlighting courtesy of <a href="https://highlightjs.org/usage/">highlight.js</a>.</p>
+</section>	

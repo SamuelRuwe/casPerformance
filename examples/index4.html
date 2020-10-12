@@ -1,16 +1,88 @@
 <!doctype html>
 <html lang="en">
 
-	@@include('./slides/head.html')
+	<head>
+		<meta charset="utf-8">
+
+		<title>STN Performance</title>
+
+		<meta name="description" content="Performance Analysis">
+		<meta name="author" content="Samuel Ruwe">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/black.css" id="theme">
+
+		<link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
+	</head>
+
 	<body>
 
 		<div class="reveal">
 
+			<!-- Any section element inside of this container is displayed as a slide -->
 			<div class="slides">
-				@@include('./slides/intro.html')
-				@@include('./slides/performanceList.html')
-				@@include('./slides/performance/match.html')
-				@@include('./slides/performance/matchCode.html')
+				<section>
+					<h3>An Uncomfortably Close Look at Performance in STNext</h3>
+					<p>
+						<small>Created by <a href="https://github.com/SamuelRuwe">Samuel Ruwe</a></small>
+					</p>
+				</section>
+
+				<section>
+					<h2>Problems in STNext</h2>
+					<ul>
+						<li class="fragment fade-in-then-semi-out">Pattern Matching</li>
+						<li class="fragment fade-in-then-semi-out">Image Blocking</li>
+						<li class="fragment fade-in-then-semi-out">Reprocessing Data</li>
+						<li class="fragment fade-in-then-semi-out">Large Buffer Sizes</li>
+						<li class="fragment fade-in-then-semi-out">Initializing Excess Objects</li>
+						<li class="fragment fade-in-then-semi-out">Data Accumulation</li>
+						<li class="fragment fade-in-then-semi-out">Inefficient Algorithms</li>
+						<li class="fragment fade-in">Early Data Retrieval</li>
+					</ul>
+				</section>
+
+				<!-- Example of nested vertical slides -->
+				<section>
+					<section>
+						<h2 data-auto-animate>Pattern Matching</h2>
+						<p>Slides can be nested inside of each other.</p>
+						<p>Use the <em>Space</em> key to navigate through all slides.</p>
+						<br>
+						<a href="#" class="navigate-down">
+							<img class="r-frame" style="background: rgba(255,255,255,0.1);" width="178" height="238" data-src="https://static.slid.es/reveal/arrow.png" alt="Down arrow">
+						</a>
+					</section>
+					<section>
+						<h2>Basement Level 1</h2>
+						<p>Nested slides are useful for adding additional detail underneath a high level horizontal slide.</p>
+					</section>
+					<section>
+						<h2>Basement Level 2</h2>
+						<p>That's it, time to go back up.</p>
+						<br>
+						<a href="#/2">
+							<img class="r-frame" style="background: rgba(255,255,255,0.1); transform: rotate(180deg);" width="178" height="238" data-src="https://static.slid.es/reveal/arrow.png" alt="Up arrow">
+						</a>
+					</section>
+				</section>
+
+				<section>
+					<h2>Slides</h2>
+					<p>
+						Not a coder? Not a problem. There's a fully-featured visual editor for authoring these, try it out at <a href="https://slides.com" target="_blank">https://slides.com</a>.
+					</p>
+				</section>
+
+				<section data-visibility="hidden">
+					<h2>Hidden Slides</h2>
+					<p>
+						This slide is visible in the source, but hidden when the presentation is viewed. You can show all hidden slides by setting the `showHiddenSlides` config option to `true`.
+					</p>
+				</section>
 
 				<section data-auto-animate>
 					<h2 data-id="code-title">Pretty Code</h2>
@@ -388,8 +460,8 @@ Reveal.on( 'customevent', function() {
 				progress: true,
 				center: true,
 				hash: true,
-				width: 1250,
-				height: 900,
+
+				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight ]
 			});
 

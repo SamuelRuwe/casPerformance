@@ -1,0 +1,33 @@
+<section>
+	<section>
+		<h2>Problem</h2>
+		<p class="fragment fade-up">
+			We spend an excessive amount of
+			time processing the response from messenger in regular expressions.
+		</p>
+	</section>
+	<section>
+	<pre data-id="code-animation"><code class="hljs stretch" data-trim data-line-numbers>
+		void handleNewlyCapturedTelnetInput (char newlyCaptured) {
+		UserSessionState sessionState = sessionStateService.getSessionState(user);
+
+		bufferService.appendNewlyCapturedInputToBuffer(newlyCaptured, user);
+
+	    checkForSegments(newlyCaptured, sessionState);
+		}
+		</code></pre>
+	</section>	
+	<section>
+		<h2>Solution</h2>
+		<p>
+			While this is definitely a major time sink, it is related 
+			more to how we choose to process data than the java algorithm. The 
+			benefit from attempting to improve this would likely be minimal. As 
+			such, I recommend we don't attempt to adjust this until we have fixed 
+			the other problem areas.
+		</p>
+	</section>
+	<section>
+		<p>ooh code is here</p>
+	</section>
+</section>

@@ -20,6 +20,8 @@ const eslint = require('gulp-eslint')
 const minify = require('gulp-clean-css')
 const connect = require('gulp-connect')
 const autoprefixer = require('gulp-autoprefixer')
+const fileinclude = require('gulp-file-include')
+const rename = require('gulp-rename')
 
 const root = yargs.argv.root || '.'
 const port = yargs.argv.port || 8000
@@ -67,6 +69,18 @@ babelConfigESM.presets[0][1].targets = { browsers: [
 ] };
 
 let cache = {};
+
+gulp.task('htmlinclude', () => {
+    
+    let stream = gulp.src(['./index.html'])
+    .pipe(fileinclude({
+      prefix: '@@',
+      basepath: '@file'
+    }))
+    .pipe(rename("prod.html"))
+    .pipe(gulp.dest('./'))
+    return stream;
+});
 
 // Creates a bundle with broad browser support, exposed
 // as UMD
@@ -241,7 +255,7 @@ gulp.task('eslint', () => gulp.src(['./js/**', 'gulpfile.js'])
 
 gulp.task('test', gulp.series( 'eslint', 'qunit' ))
 
-gulp.task('default', gulp.series(gulp.parallel('js', 'css', 'plugins'), 'test'))
+gulp.task('default', gulp.series(gulp.parallel('htmlinclude', 'js', 'css', 'plugins'), 'test'))
 
 gulp.task('build', gulp.parallel('js', 'css', 'plugins'))
 
