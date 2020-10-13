@@ -2,15 +2,66 @@
 	<section>
 		<h2>Problem</h2>
 		<p class="fragment fade-up">
+			Every time we run getResponseBuffer we initialize
+			a new StringBuilder object. This method is executed
+			many times, meaning we create a ton of new objects
+			just for returning a StringBuilder object
 		</p>
 	</section>
 	<section>
-	<pre data-id="code-animation"><code class="hljs stretch" data-trim data-line-numbers>
-		</code></pre>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|6"><script type="text/template">
+		@Override
+    public StringBuilder getResponseBuffer (User user) {
+        if (!userToBufferMap.containsKey(user)) {
+            userToBufferMap.put(user, new StringBuilder());
+        }
+        return new StringBuilder(userToBufferMap.get(user));
+    }
+		</script></code></pre>
 	</section>	
+	<section><img src="./images/StringBuilderTimes.png" alt="StringBuilder Times"></section>
 	<section>
 		<h2>Solution</h2>
-		<p>
+		<p class="fragment fade-up">
+			Have an available StringBuilder
+			so a new StringBuilder isn't required 
+			every time this method is run
+		</p>
+	</section>
+	<section>
+		<h2>Ways to Empty a StringBuilder</h2>
+		<ul>
+			<li class="fragment fade-in-then-semi-out">Create a new StringBuilder</li>
+			<li class="fragment fade-in-then-semi-out">Delete from Start to End</li>
+			<li class="fragment fade-in-then-semi-out">Set StringBuilder length to 0</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggestions</h2>
+		<p class="fragment fade-in">
+			If a StringBuilder object is utilized, adjust the length to 0
+			rather than creating a new one on each use
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Cards #1</h2>
+		<ul>
+			<li class="fragment fade-in">Create a static StringBuilder for this method</li>
+			<li class="fragment fade-in">Synchronize the block as to prevent thread issues</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggested Cards #2</h2>
+		<ul>
+			<li class="fragment fade-in">Attach a StringBuilder Object to the User</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggested Cards #3</h2>
+		<p class="fragment fade-in">
+				Adjust the findSegment method in 
+				MessengerResponseSegmentHelper.java to not require a StringBuilder
+				object be returned
 		</p>
 	</section>
 </section>

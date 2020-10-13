@@ -2,15 +2,111 @@
 	<section>
 		<h2>Problem</h2>
 		<p class="fragment fade-up">
+			Due to how we choose when to split the String
+			we are working with, we reprocess large amounts
+			of data
 		</p>
 	</section>
 	<section>
-	<pre data-id="code-animation"><code class="hljs stretch" data-trim data-line-numbers>
+		<h2>isBufferFull</h2>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|7|8">
+	    @Override
+    public boolean isBufferFull (User user) {
+
+        StringBuilder builder = this.getResponseBuffer(user);
+
+        boolean tooLong = builder.length() > BUFFER_LIMIT;
+				// BUFFER_LIMIT = 10_000;
+        boolean metaOpen = checkMetaOpen(builder.toString());
+        return tooLong && !metaOpen;
+    }
+	</code></pre>
+	</section>	
+	<section data-auto-animate>
+		<h2>checkMetaOpen</h2>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|4,5|15,26|30">
+	private boolean checkMetaOpen(String buffer) {
+
+        boolean inMeta = false;
+        String[] lines = buffer.split(PlanariaConstants.CRLF);
+        for (String line : lines) {
+
+            // Check for a start GROUP, COMPONENT 
+		// or PRODUCT formulations meta-tag
+            Matcher metaStartMatcher = metaStartPattern.matcher(line);
+            if (metaStartMatcher.find()) {
+                String tag = metaStartMatcher.group(1);
+                boolean found = tag.equals(GROUP_TAG) 
+				|| tag.equals(COMPONENT_TAG) 
+				|| tag.equals(PRODUCT_TAG);
+                inMeta = found ? true : inMeta;
+            }
+
+            // Check for an end GROUP, COMPONENT 
+		// or PRODUCT formulations meta-tag
+            Matcher metaEndMatcher = metaEndPattern.matcher(line);
+            if (metaEndMatcher.find()) {
+                String tag = metaEndMatcher.group(1);
+                boolean found = tag.equals(GROUP_TAG) 
+				|| tag.equals(COMPONENT_TAG) 
+				|| tag.equals(PRODUCT_TAG);
+                inMeta = found ? false : inMeta;
+            }
+        }
+
+        return inMeta;
+    }
 		</code></pre>
 	</section>	
 	<section>
+		<h2>canSplitOnSize</h2>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|12,13,14"><script type="text/template">
+	    private boolean canSplitOnSize (UserSessionState sessionState) {
+        // If it is not already broken by size and we are in a file that could 
+		// contain a full text link,
+        // check to see that we have all the fields we need to build the full text link.
+        if (!sessionState.getDisplayRecordInfo().isBrokenBySize() 
+		&& !FullTextLinkFilter.RESTRICTED_DB_LIST
+        .contains(sessionState.getDisplayRecordInfo().getSegmentSourceDatabase())) {
+
+			Set<String> fieldCodesEncountered 
+		= sessionState.getDisplayRecordInfo().getDetectedTitles().stream()
+            .map(FieldTitle::getFieldCode).collect(Collectors.toSet());
+            return fieldCodesEncountered.containsAll(Arrays.asList("AN", "SO"))
+                    || !Collections.disjoint(fieldCodesEncountered, 
+					Arrays.asList("PI", "PIA", "PUI"));
+
+        }
+        return true;
+    }
+	</script></code></pre>
+	</section>	
+	<section>
 		<h2>Solution</h2>
-		<p>
+		<p class="fragment fade-up">
+			Find a more optimal way to decide when
+			to split the buffer
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Cards #1</h2>
+		<p class="fragment fade-up">
+			Change methods so that the string can be broken based
+			on size as well as substrings it contains
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Cards #2</h2>
+		<p class="fragment fade-up">
+			Optimize Algorithms as to not waste execution time
+			on irrelevant data
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Epic</h2>
+		<p class="fragment fade-up">
+			Find a way to process data only once rather than
+			in multiple areas
 		</p>
 	</section>
 </section>

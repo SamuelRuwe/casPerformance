@@ -15,7 +15,7 @@
 		<link rel="stylesheet" href="dist/reveal.css">
 		<link rel="stylesheet" href="dist/theme/black.css" id="theme">
 
-		<link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
+		<link rel="stylesheet" href="./node_modules/highlight.js/styles/gruvbox-dark.css" id="highlight-theme">
 	</head>
 
 
@@ -42,13 +42,14 @@
 	<h2>Problems in STNext</h2>
 	<ul>
 		<li class="fragment fade-in-then-semi-out">Pattern Matching</li>
-		<li class="fragment fade-in-then-semi-out">Image Blocking</li>
-		<li class="fragment fade-in-then-semi-out">Reprocessing Data</li>
 		<li class="fragment fade-in-then-semi-out">Large Buffer Sizes</li>
-		<li class="fragment fade-in-then-semi-out">Initializing Excess Objects</li>
-		<li class="fragment fade-in-then-semi-out">Data Accumulation</li>
 		<li class="fragment fade-in-then-semi-out">Inefficient Algorithms</li>
-		<li class="fragment fade-in">Early Data Retrieval</li>
+		<li class="fragment fade-in-then-semi-out">Initializing Excess Objects</li>
+		<li class="fragment fade-in-then-semi-out">Logging</li>
+		<li class="fragment fade-in-then-semi-out">Early Data Retrieval</li>
+		<li class="fragment fade-in-then-semi-out">Reprocessing Data</li>
+		<li class="fragment fade-in-then-semi-out">Data Accumulation</li>
+		<li class="fragment fade-in-then-semi-out">Image Blocking</li>
 	</ul>
 </section>
 
@@ -63,19 +64,12 @@
 		</p>
 	</section>
 	<section>
-	<pre data-id="code-animation"><code class="hljs stretch" data-trim data-line-numbers>
-		void handleNewlyCapturedTelnetInput (char newlyCaptured) {
-		UserSessionState sessionState = sessionStateService.getSessionState(user);
-
-		bufferService.appendNewlyCapturedInputToBuffer(newlyCaptured, user);
-
-	    checkForSegments(newlyCaptured, sessionState);
-		}
-		</code></pre>
-	</section>	
+		<h2>Problem</h2>
+		<img src="./images/RegexTimes.png" alt="RegexTimes" class="fragment fade-in">
+	</section>
 	<section>
 		<h2>Solution</h2>
-		<p>
+		<p class="fragment fade-up">
 			While this is definitely a major time sink, it is related 
 			more to how we choose to process data than the java algorithm. The 
 			benefit from attempting to improve this would likely be minimal. As 
@@ -84,381 +78,422 @@
 		</p>
 	</section>
 	<section>
-		<p>ooh code is here</p>
+		<h2>Suggested Card</h2>
+		<p class="fragment fade-up">None</p>
 	</section>
 </section>
 
 				<section>
-<h2 data-id="code-title">Pretty Code</h2>
-<pre data-id="code-animation"><code class="hljs" data-trim data-line-numbers>
-	    void handleNewlyCapturedTelnetInput (char newlyCaptured) {
-        UserSessionState sessionState = sessionStateService.getSessionState(user);
+	<section>
+		<h2>Problem</h2>
+		<p class="fragment fade-up">
+			Due to how we choose when to split the String
+			we are working with, we reprocess large amounts
+			of data
+		</p>
+	</section>
+	<section>
+		<h2>isBufferFull</h2>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|7|8">
+	    @Override
+    public boolean isBufferFull (User user) {
 
-        bufferService.appendNewlyCapturedInputToBuffer(newlyCaptured, user);
+        StringBuilder builder = this.getResponseBuffer(user);
 
-        checkForSegments(newlyCaptured, sessionState);
+        boolean tooLong = builder.length() > BUFFER_LIMIT;
+				// BUFFER_LIMIT = 10_000;
+        boolean metaOpen = checkMetaOpen(builder.toString());
+        return tooLong && !metaOpen;
     }
 	</code></pre>
-<p>Code syntax highlighting courtesy of <a href="https://highlightjs.org/usage/">highlight.js</a>.</p>
-</section>	
+	</section>	
+	<section data-auto-animate>
+		<h2>checkMetaOpen</h2>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|4,5|15,26|30">
+	private boolean checkMetaOpen(String buffer) {
 
+        boolean inMeta = false;
+        String[] lines = buffer.split(PlanariaConstants.CRLF);
+        for (String line : lines) {
 
-				<section data-auto-animate>
-					<h2 data-id="code-title">Pretty Code</h2>
-					<pre data-id="code-animation"><code class="hljs" data-trim data-line-numbers>
-						import React, { useState } from 'react';
+            // Check for a start GROUP, COMPONENT 
+		// or PRODUCT formulations meta-tag
+            Matcher metaStartMatcher = metaStartPattern.matcher(line);
+            if (metaStartMatcher.find()) {
+                String tag = metaStartMatcher.group(1);
+                boolean found = tag.equals(GROUP_TAG) 
+				|| tag.equals(COMPONENT_TAG) 
+				|| tag.equals(PRODUCT_TAG);
+                inMeta = found ? true : inMeta;
+            }
 
-						function Example() {
-						  const [count, setCount] = useState(0);
+            // Check for an end GROUP, COMPONENT 
+		// or PRODUCT formulations meta-tag
+            Matcher metaEndMatcher = metaEndPattern.matcher(line);
+            if (metaEndMatcher.find()) {
+                String tag = metaEndMatcher.group(1);
+                boolean found = tag.equals(GROUP_TAG) 
+				|| tag.equals(COMPONENT_TAG) 
+				|| tag.equals(PRODUCT_TAG);
+                inMeta = found ? false : inMeta;
+            }
+        }
 
-						  return (
-						    ...
-						  );
-						}
-					</code></pre>
-					<p>Code syntax highlighting courtesy of <a href="https://highlightjs.org/usage/">highlight.js</a>.</p>
-				</section>
+        return inMeta;
+    }
+		</code></pre>
+	</section>	
+	<section>
+		<h2>canSplitOnSize</h2>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|12,13,14"><script type="text/template">
+	    private boolean canSplitOnSize (UserSessionState sessionState) {
+        // If it is not already broken by size and we are in a file that could 
+		// contain a full text link,
+        // check to see that we have all the fields we need to build the full text link.
+        if (!sessionState.getDisplayRecordInfo().isBrokenBySize() 
+		&& !FullTextLinkFilter.RESTRICTED_DB_LIST
+        .contains(sessionState.getDisplayRecordInfo().getSegmentSourceDatabase())) {
 
-				<section data-auto-animate>
-					<h2 data-id="code-title">With animations</h2>
-					<pre data-id="code-animation"><code class="hljs" data-trim data-line-numbers="|4,8-11|17|22-24"><script type="text/template">
-						import React, { useState } from 'react';
+			Set<String> fieldCodesEncountered 
+		= sessionState.getDisplayRecordInfo().getDetectedTitles().stream()
+            .map(FieldTitle::getFieldCode).collect(Collectors.toSet());
+            return fieldCodesEncountered.containsAll(Arrays.asList("AN", "SO"))
+                    || !Collections.disjoint(fieldCodesEncountered, 
+					Arrays.asList("PI", "PIA", "PUI"));
 
-						function Example() {
-						  const [count, setCount] = useState(0);
-
-						  return (
-						    <div>
-						      <p>You clicked {count} times</p>
-						      <button onClick={() => setCount(count + 1)}>
-						        Click me
-						      </button>
-						    </div>
-						  );
-						}
-
-						function SecondExample() {
-						  const [count, setCount] = useState(0);
-
-						  return (
-						    <div>
-						      <p>You clicked {count} times</p>
-						      <button onClick={() => setCount(count + 1)}>
-						        Click me
-						      </button>
-						    </div>
-						  );
-						}
-					</script></code></pre>
-				</section>
-
-				<section>
-					<h2>Point of View</h2>
-					<p>
-						Press <strong>ESC</strong> to enter the slide overview.
-					</p>
-					<p>
-						Hold down the <strong>alt</strong> key (<strong>ctrl</strong> in Linux) and click on any element to zoom towards it using <a href="http://lab.hakim.se/zoom-js">zoom.js</a>. Click again to zoom back out.
-					</p>
-					<p>
-						(NOTE: Use ctrl + click in Linux.)
-					</p>
-				</section>
-
-				<section data-auto-animate data-auto-animate-easing="cubic-bezier(0.770, 0.000, 0.175, 1.000)">
-					<h2>Auto-Animate</h2>
-					<p>Automatically animate matching elements across slides with <a href="https://revealjs.com/auto-animate/">Auto-Animate</a>.</p>
-					<div class="r-hstack justify-center">
-						<div data-id="box1" style="background: #999; width: 50px; height: 50px; margin: 10px; border-radius: 5px;"></div>
-						<div data-id="box2" style="background: #999; width: 50px; height: 50px; margin: 10px; border-radius: 5px;"></div>
-						<div data-id="box3" style="background: #999; width: 50px; height: 50px; margin: 10px; border-radius: 5px;"></div>
-					</div>
-				</section>
-				<section data-auto-animate data-auto-animate-easing="cubic-bezier(0.770, 0.000, 0.175, 1.000)">
-					<div class="r-hstack justify-center">
-						<div data-id="box1" data-auto-animate-delay="0" style="background: cyan; width: 150px; height: 100px; margin: 10px;"></div>
-						<div data-id="box2" data-auto-animate-delay="0.1" style="background: magenta; width: 150px; height: 100px; margin: 10px;"></div>
-						<div data-id="box3" data-auto-animate-delay="0.2" style="background: yellow; width: 150px; height: 100px; margin: 10px;"></div>
-					</div>
-					<h2 style="margin-top: 20px;">Auto-Animate</h2>
-				</section>
-				<section data-auto-animate data-auto-animate-easing="cubic-bezier(0.770, 0.000, 0.175, 1.000)">
-					<div class="r-stack">
-						<div data-id="box1" style="background: cyan; width: 300px; height: 300px; border-radius: 200px;"></div>
-						<div data-id="box2" style="background: magenta; width: 200px; height: 200px; border-radius: 200px;"></div>
-						<div data-id="box3" style="background: yellow; width: 100px; height: 100px; border-radius: 200px;"></div>
-					</div>
-					<h2 style="margin-top: 20px;">Auto-Animate</h2>
-				</section>
+        }
+        return true;
+    }
+	</script></code></pre>
+	</section>	
+	<section>
+		<h2>Solution</h2>
+		<p class="fragment fade-up">
+			Find a more optimal way to decide when
+			to split the buffer
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Cards #1</h2>
+		<p class="fragment fade-up">
+			Change methods so that the string can be broken based
+			on size as well as substrings it contains
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Cards #2</h2>
+		<p class="fragment fade-up">
+			Optimize Algorithms as to not waste execution time
+			on irrelevant data
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Epic</h2>
+		<p class="fragment fade-up">
+			Find a way to process data only once rather than
+			in multiple areas
+		</p>
+	</section>
+</section>
 
 				<section>
-					<h2>Touch Optimized</h2>
-					<p>
-						Presentations look great on touch devices, like mobile phones and tablets. Simply swipe through your slides.
-					</p>
-				</section>
-
-				<section data-markdown>
-					<script type="text/template">
-						## Markdown support
-
-						Write content using inline or external Markdown.
-						Instructions and more info available in the [readme](https://revealjs.com/markdown/).
-
-						```[]
-						<section data-markdown>
-						  ## Markdown support
-
-						  Write content using inline or external Markdown.
-						  Instructions and more info available in the [readme](https://revealjs.com/markdown/).
-						</section>
-						```
-					</script>
-				</section>
-
-				<section>
-					<section id="fragments">
-						<h2>Fragments</h2>
-						<p>Hit the next arrow...</p>
-						<p class="fragment">... to step through ...</p>
-						<p><span class="fragment">... a</span> <span class="fragment">fragmented</span> <span class="fragment">slide.</span></p>
-
-						<aside class="notes">
-							This slide has fragments which are also stepped through in the notes window.
-						</aside>
-					</section>
-					<section>
-						<h2>Fragment Styles</h2>
-						<p>There's different types of fragments, like:</p>
-						<p class="fragment grow">grow</p>
-						<p class="fragment shrink">shrink</p>
-						<p class="fragment fade-out">fade-out</p>
-						<p>
-							<span style="display: inline-block;" class="fragment fade-right">fade-right, </span>
-							<span style="display: inline-block;" class="fragment fade-up">up, </span>
-							<span style="display: inline-block;" class="fragment fade-down">down, </span>
-							<span style="display: inline-block;" class="fragment fade-left">left</span>
-						</p>
-						<p class="fragment fade-in-then-out">fade-in-then-out</p>
-						<p class="fragment fade-in-then-semi-out">fade-in-then-semi-out</p>
-						<p>Highlight <span class="fragment highlight-red">red</span> <span class="fragment highlight-blue">blue</span> <span class="fragment highlight-green">green</span></p>
-					</section>
-				</section>
-
-				<section id="transitions">
-					<h2>Transition Styles</h2>
-					<p>
-						You can select from different transitions, like: <br>
-						<a href="?transition=none#/transitions">None</a> -
-						<a href="?transition=fade#/transitions">Fade</a> -
-						<a href="?transition=slide#/transitions">Slide</a> -
-						<a href="?transition=convex#/transitions">Convex</a> -
-						<a href="?transition=concave#/transitions">Concave</a> -
-						<a href="?transition=zoom#/transitions">Zoom</a>
-					</p>
-				</section>
-
-				<section id="themes">
-					<h2>Themes</h2>
-					<p>
-						reveal.js comes with a few themes built in: <br>
-						<!-- Hacks to swap themes after the page has loaded. Not flexible and only intended for the reveal.js demo deck. -->
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/black.css'); return false;">Black (default)</a> -
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/white.css'); return false;">White</a> -
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/league.css'); return false;">League</a> -
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/sky.css'); return false;">Sky</a> -
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/beige.css'); return false;">Beige</a> -
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/simple.css'); return false;">Simple</a> <br>
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/serif.css'); return false;">Serif</a> -
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/blood.css'); return false;">Blood</a> -
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/night.css'); return false;">Night</a> -
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/moon.css'); return false;">Moon</a> -
-						<a href="#" onclick="document.getElementById('theme').setAttribute('href','css/theme/solarized.css'); return false;">Solarized</a>
-					</p>
-				</section>
+	<section>
+		<h2>Problem</h2>
+		<p class="fragment fade-up">
+			Every time we run getResponseBuffer we initialize
+			a new StringBuilder object. This method is executed
+			many times, meaning we create a ton of new objects
+			just for returning a StringBuilder object
+		</p>
+	</section>
+	<section>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|6"><script type="text/template">
+		@Override
+    public StringBuilder getResponseBuffer (User user) {
+        if (!userToBufferMap.containsKey(user)) {
+            userToBufferMap.put(user, new StringBuilder());
+        }
+        return new StringBuilder(userToBufferMap.get(user));
+    }
+		</script></code></pre>
+	</section>	
+	<section><img src="./images/StringBuilderTimes.png" alt="StringBuilder Times"></section>
+	<section>
+		<h2>Solution</h2>
+		<p class="fragment fade-up">
+			Have an available StringBuilder
+			so a new StringBuilder isn't required 
+			every time this method is run
+		</p>
+	</section>
+	<section>
+		<h2>Ways to Empty a StringBuilder</h2>
+		<ul>
+			<li class="fragment fade-in-then-semi-out">Create a new StringBuilder</li>
+			<li class="fragment fade-in-then-semi-out">Delete from Start to End</li>
+			<li class="fragment fade-in-then-semi-out">Set StringBuilder length to 0</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggestions</h2>
+		<p class="fragment fade-in">
+			If a StringBuilder object is utilized, adjust the length to 0
+			rather than creating a new one on each use
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Cards #1</h2>
+		<ul>
+			<li class="fragment fade-in">Create a static StringBuilder for this method</li>
+			<li class="fragment fade-in">Synchronize the block as to prevent thread issues</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggested Cards #2</h2>
+		<ul>
+			<li class="fragment fade-in">Attach a StringBuilder Object to the User</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggested Cards #3</h2>
+		<p class="fragment fade-in">
+				Adjust the findSegment method in 
+				MessengerResponseSegmentHelper.java to not require a StringBuilder
+				object be returned
+		</p>
+	</section>
+</section>
 
 				<section>
-					<section data-background="#dddddd">
-						<h2>Slide Backgrounds</h2>
-						<p>
-							Set <code>data-background="#dddddd"</code> on a slide to change the background color. All CSS color formats are supported.
-						</p>
-						<a href="#" class="navigate-down">
-							<img class="r-frame" style="background: rgba(255,255,255,0.1);" width="178" height="238" data-src="https://static.slid.es/reveal/arrow.png" alt="Down arrow">
-						</a>
-					</section>
-					<section data-background="https://static.slid.es/reveal/image-placeholder.png">
-						<h2>Image Backgrounds</h2>
-						<pre><code class="hljs html">&lt;section data-background="image.png"&gt;</code></pre>
-					</section>
-					<section data-background="https://static.slid.es/reveal/image-placeholder.png" data-background-repeat="repeat" data-background-size="100px">
-						<h2>Tiled Backgrounds</h2>
-						<pre><code class="hljs html" style="word-wrap: break-word;">&lt;section data-background="image.png" data-background-repeat="repeat" data-background-size="100px"&gt;</code></pre>
-					</section>
-					<section data-background-video="https://s3.amazonaws.com/static.slid.es/site/homepage/v1/homepage-video-editor.mp4" data-background-color="#000000">
-						<div style="background-color: rgba(0, 0, 0, 0.9); color: #fff; padding: 20px;">
-							<h2>Video Backgrounds</h2>
-							<pre><code class="hljs html" style="word-wrap: break-word;">&lt;section data-background-video="video.mp4,video.webm"&gt;</code></pre>
-						</div>
-					</section>
-					<section data-background="http://i.giphy.com/90F8aUepslB84.gif">
-						<h2>... and GIFs!</h2>
-					</section>
-				</section>
-
-				<section data-transition="slide" data-background="#4d7e65" data-background-transition="zoom">
-					<h2>Background Transitions</h2>
-					<p>
-						Different background transitions are available via the backgroundTransition option. This one's called "zoom".
-					</p>
-					<pre><code class="hljs javascript">Reveal.configure({ backgroundTransition: 'zoom' })</code></pre>
-				</section>
-
-				<section data-transition="slide" data-background="#b5533c" data-background-transition="zoom">
-					<h2>Background Transitions</h2>
-					<p>
-						You can override background transitions per-slide.
-					</p>
-					<pre><code class="hljs html" style="word-wrap: break-word;">&lt;section data-background-transition="zoom"&gt;</code></pre>
-				</section>
-
-				<section data-background-iframe="https://hakim.se" data-background-interactive>
-					<div style="position: absolute; width: 40%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(0, 0, 0, 0.9); color: #fff; padding: 20px; font-size: 20px; text-align: left;">
-						<h2>Iframe Backgrounds</h2>
-						<p>Since reveal.js runs on the web, you can easily embed other web content. Try interacting with the page in the background.</p>
-					</div>
-				</section>
+	<section>
+		<h2>Problem</h2>
+		<p class="fragment fade-in">
+			Logging Takes a Significant Amount of Time
+		</p>
+	</section>
+	<section>
+		<h2>Solution</h2>
+		<p class="fragment fade-in">
+			Follow through with Wes's Suggestion to switch to
+			asynchronous logging
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Card</h2>
+		<p class="fragment fade-in">None</p>
+	</section>
+</section>
 
 				<section>
-					<h2>Marvelous List</h2>
-					<ul>
-						<li>No order here</li>
-						<li>Or here</li>
-						<li>Or here</li>
-						<li>Or here</li>
-					</ul>
-				</section>
+	<section>
+		<h2>Problem</h2>
+		<p class="fragment fade-up">
+			When returning from a log hold, we retrieve
+			all of the history data from MongoDB before
+			the user chooses to load their history
+		</p>
+	</section>
+	<section>
+		<h2>Solution</h2>
+		<p class="fragment fade-up">
+			Only download data when it is needed
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Card</h2>
+		<p class="fragment fade-in">
+			Change setup so that session setup doesn't
+			require the users history prior to them requesting it
+		</p>
+	</section>
+</section>
 
 				<section>
-					<h2>Fantastic Ordered List</h2>
-					<ol>
-						<li>One is smaller than...</li>
-						<li>Two is smaller than...</li>
-						<li>Three!</li>
-					</ol>
-				</section>
+	<section>
+		<h2>Problem</h2>
+		<p class="fragment fade-up">
+			We reprocess messenger responses when a client
+			returns from a log hold
+		</p>
+	</section>
+	<section>
+		<h2>Solution</h2>
+		<ul>
+			<li class="fragment fade-up">Store processed data in MongoDB</li>
+			<li class="fragment fade-up">Improve server processing times</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggested Cards #1</h2>
+		<p class="fragment fade-up">
+			Don't create a card for this as
+			processing improvement will speed this up
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Card #2</h2>
+		<ul>
+			<li class="fragment fade-up">
+				Add a property in MongoDB 
+				to store processed response
+			</li>
+		</ul>
+	</section>
+</section>
 
 				<section>
-					<h2>Tabular Tables</h2>
-					<table>
-						<thead>
-							<tr>
-								<th>Item</th>
-								<th>Value</th>
-								<th>Quantity</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>Apples</td>
-								<td>$1</td>
-								<td>7</td>
-							</tr>
-							<tr>
-								<td>Lemonade</td>
-								<td>$2</td>
-								<td>18</td>
-							</tr>
-							<tr>
-								<td>Bread</td>
-								<td>$3</td>
-								<td>2</td>
-							</tr>
-						</tbody>
-					</table>
-				</section>
+	<section>
+		<h2>Problem</h2>
+		<p class="fragment fade-up">
+			Data retrieved from a log hold is accumulated on the
+			front end rather than streamed
+		</p>
+	</section>
+	<section data-auto-animate>
+	<pre data-id="code-animation"><code class="javascript" data-trim data-line-numbers>
+function pollAndAccumulateHistory(response) {
+   ...
+   return [];
+	}
+		</code></pre>
+	</section>	
+	<section data-auto-animate>
+	<pre data-id="code-animation"><code class="javascript" data-trim data-line-numbers="|5,9,10|17,18,19,20|20|21,22,23,24|25,26,30">
+function pollAndAccumulateHistory(response) {
+
+ var lastResponseData = response.data;
+
+ if (angular.isArray(response.data)) {
+     response.data.forEach(function (respData) {
+         if (respData.hasOwnProperty("responses") 
+		 && respData.responses.length > 0) {
+             messengerHistoryService.responses 
+	= messengerHistoryService.responses.concat(respData.responses);
+         }
+     });
+
+     lastResponseData = response.data[response.data.length - 1];
+ }
+
+ if (response.status === 202 
+ || response.status === 204 
+ || (lastResponseData.hasOwnProperty("complete") 
+ && !lastResponseData.complete)) {
+     return httpRetryService.callWithRetry({
+         method: RESTSERVICES.pollHistory.requestMethod,
+         url: RESTSERVICES.pollHistory.endpoint + "?maxResponses=10"
+     }).then( pollAndAccumulateHistory );
+    } else if (lastResponseData.hasOwnProperty("complete") 
+	&& lastResponseData.complete) {
+        const commandsToReturn 
+		= angular.copy(messengerHistoryService.responses);
+        messengerHistoryService.responses.length = 0;
+        return commandsToReturn;
+    }
+
+    return [];
+	}
+		</code></pre>
+	</section>	
+	<section>
+		<h2>Solution</h2>
+		<p class="fragment fade-up">
+			Standardize how we handle messenger data that is 
+			received on the client side and use the chosen method 
+			everywhere we receive this data
+		</p>
+	</section>
+	<section>
+		<h2>Suggested Card</h2>
+		<ul>
+			<li class="fragment fade-up">Extract Data Receiving Method from cli.srvc.js</li>
+			<li class="fragment fade-up">Implement Method in both messenger.history.srvc.js and
+			in cli.srvc.js</li>
+		</ul>
+	</section>
+</section>
 
 				<section>
-					<h2>Clever Quotes</h2>
-					<p>
-						These guys come in two forms, inline: <q cite="http://searchservervirtualization.techtarget.com/definition/Our-Favorite-Technology-Quotations">The nice thing about standards is that there are so many to choose from</q> and block:
-					</p>
-					<blockquote cite="http://searchservervirtualization.techtarget.com/definition/Our-Favorite-Technology-Quotations">
-						&ldquo;For years there has been a theory that millions of monkeys typing at random on millions of typewriters would
-						reproduce the entire works of Shakespeare. The Internet has proven this theory to be untrue.&rdquo;
-					</blockquote>
-				</section>
+	<section>
+		<h2>Problem</h2>
+		<p class="fragment fade-in">
+			A massive amount of time is spent waiting 
+			for images to be retrieved due to Polling
+			and utilization of HTTP/1.1
+		</p>
+	</section>
+	<section>
+		<h2>What is Polling</h2>
+		<img style="background: white" class="fragment fade-in" src="./images/Polling.png" alt="Polling">
+	</section>
+	<section>
+		<h2>Why is Polling a Problem</h2>
+		<img class="fragment fade-in" src="./images/ImageBlocking.png" alt="">
+	</section>
+	<section>
+		<h2>Polling Alternatives</h2>
+		<ul>
+			<li class="fragment fade-in">WebSocket</li>
+			<li class="fragment fade-in">Server Sent Events</li>
+		</ul>
+	</section>
+	<section>
+		<h2>What is a WebSocket</h2>
+		<img src="./images/WebSocket.jpg" alt="WebSocket" class="fragment fade-in">
+	</section>
+	<section>
+		<h2>What is a Server Sent Event</h2>
+		<img src="./images/SSE.png" alt="Server Sent Event"class="fragment fade-in">
+	</section>
+	<section>
+		<h2>Suggested Cards #1</h2>
+		<ul>
+			<li class="fragment fade-in">Switch to using Websocks or SSE</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggested Cards #2</h2>
+		<ul>
+			<li class="fragment fade-in">Have the image data ready before it is requested</li>
+			<li class="fragment fade-in">
+				When we know an image is going to be requested,
+				send the request to the necessary database so it
+				is ready when the client asks for it
+			</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggested Cards #3</h2>
+		<p class="fragment fade-in">
+			Allow the Client to request
+			multiple images at once</p>
+	</section>
+</section>
 
 				<section>
-					<h2>Intergalactic Interconnections</h2>
-					<p>
-						You can link between slides internally,
-						<a href="#/2/3">like this</a>.
-					</p>
-				</section>
+	<h2 class="fragment fade-in">Key Take Aways</h2>
+	<ul>
+		<li class="fragment fade-in-then-out">Most performance issues have to due with how we process data</li>
+		<li class="fragment fade-in-then-out">There are LOTS of small optimizations that can be made</li>
+		<li class="fragment fade-in-then-out">Objects should only be initialized if they are needed</li>
+		<li class="fragment fade-in-then-out">
+			Methods and objects should be named in a way that
+			tells others what they do
+		</li>
+		<li class="fragment fade-in">
+			Code should be consistent so optimizations
+			aren't needed in multiple places
+		</li>
+	</ul>
+</section>
+
+
 
 				<section>
-					<h2>Speaker View</h2>
-					<p>There's a <a href="https://revealjs.com/speaker-view/">speaker view</a>. It includes a timer, preview of the upcoming slide as well as your speaker notes.</p>
-					<p>Press the <em>S</em> key to try it out.</p>
+	<h2 class="fragment fade-in">Questions?</h2>
+</section>
 
-					<aside class="notes">
-						Oh hey, these are some notes. They'll be hidden in your presentation, but you can see them if you open the speaker notes window (hit 's' on your keyboard).
-					</aside>
-				</section>
 
-				<section>
-					<h2>Export to PDF</h2>
-					<p>Presentations can be <a href="https://revealjs.com/pdf-export/">exported to PDF</a>, here's an example:</p>
-					<iframe data-src="https://www.slideshare.net/slideshow/embed_code/42840540" width="445" height="355" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:3px solid #666; margin-bottom:5px; max-width: 100%;" allowfullscreen> </iframe>
-				</section>
-
-				<section>
-					<h2>Global State</h2>
-					<p>
-						Set <code>data-state="something"</code> on a slide and <code>"something"</code>
-						will be added as a class to the document element when the slide is open. This lets you
-						apply broader style changes, like switching the page background.
-					</p>
-				</section>
-
-				<section data-state="customevent">
-					<h2>State Events</h2>
-					<p>
-						Additionally custom events can be triggered on a per slide basis by binding to the <code>data-state</code> name.
-					</p>
-					<pre><code class="javascript" data-trim contenteditable style="font-size: 18px;">
-Reveal.on( 'customevent', function() {
-	console.log( '"customevent" has fired' );
-} );
-					</code></pre>
-				</section>
-
-				<section>
-					<h2>Take a Moment</h2>
-					<p>
-						Press B or . on your keyboard to pause the presentation. This is helpful when you're on stage and want to take distracting slides off the screen.
-					</p>
-				</section>
-
-				<section>
-					<h2>Much more</h2>
-					<ul>
-						<li>Right-to-left support</li>
-						<li><a href="https://revealjs.com/api/">Extensive JavaScript API</a></li>
-						<li><a href="https://revealjs.com/auto-slide/">Auto-progression</a></li>
-						<li><a href="https://revealjs.com/backgrounds/#parallax-background">Parallax backgrounds</a></li>
-						<li><a href="https://revealjs.com/keyboard/">Custom keyboard bindings</a></li>
-					</ul>
-				</section>
-
-				<section style="text-align: left;">
-					<h1>THE END</h1>
-					<p>
-						- <a href="https://slides.com">Try the online editor</a> <br>
-						- <a href="https://github.com/hakimel/reveal.js">Source code &amp; documentation</a>
-					</p>
-				</section>
 
 			</div>
 

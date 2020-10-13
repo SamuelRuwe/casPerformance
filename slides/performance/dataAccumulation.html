@@ -2,15 +2,70 @@
 	<section>
 		<h2>Problem</h2>
 		<p class="fragment fade-up">
+			Data retrieved from a log hold is accumulated on the
+			front end rather than streamed
 		</p>
 	</section>
-	<section>
-	<pre data-id="code-animation"><code class="hljs stretch" data-trim data-line-numbers>
+	<section data-auto-animate>
+	<pre data-id="code-animation"><code class="javascript" data-trim data-line-numbers>
+function pollAndAccumulateHistory(response) {
+   ...
+   return [];
+	}
+		</code></pre>
+	</section>	
+	<section data-auto-animate>
+	<pre data-id="code-animation"><code class="javascript" data-trim data-line-numbers="|5,9,10|17,18,19,20|20|21,22,23,24|25,26,30">
+function pollAndAccumulateHistory(response) {
+
+ var lastResponseData = response.data;
+
+ if (angular.isArray(response.data)) {
+     response.data.forEach(function (respData) {
+         if (respData.hasOwnProperty("responses") 
+		 && respData.responses.length > 0) {
+             messengerHistoryService.responses 
+	= messengerHistoryService.responses.concat(respData.responses);
+         }
+     });
+
+     lastResponseData = response.data[response.data.length - 1];
+ }
+
+ if (response.status === 202 
+ || response.status === 204 
+ || (lastResponseData.hasOwnProperty("complete") 
+ && !lastResponseData.complete)) {
+     return httpRetryService.callWithRetry({
+         method: RESTSERVICES.pollHistory.requestMethod,
+         url: RESTSERVICES.pollHistory.endpoint + "?maxResponses=10"
+     }).then( pollAndAccumulateHistory );
+    } else if (lastResponseData.hasOwnProperty("complete") 
+	&& lastResponseData.complete) {
+        const commandsToReturn 
+		= angular.copy(messengerHistoryService.responses);
+        messengerHistoryService.responses.length = 0;
+        return commandsToReturn;
+    }
+
+    return [];
+	}
 		</code></pre>
 	</section>	
 	<section>
 		<h2>Solution</h2>
-		<p>
+		<p class="fragment fade-up">
+			Standardize how we handle messenger data that is 
+			received on the client side and use the chosen method 
+			everywhere we receive this data
 		</p>
+	</section>
+	<section>
+		<h2>Suggested Card</h2>
+		<ul>
+			<li class="fragment fade-up">Extract Data Receiving Method from cli.srvc.js</li>
+			<li class="fragment fade-up">Implement Method in both messenger.history.srvc.js and
+			in cli.srvc.js</li>
+		</ul>
 	</section>
 </section>

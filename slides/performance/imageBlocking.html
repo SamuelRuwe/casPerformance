@@ -1,16 +1,56 @@
 <section>
 	<section>
 		<h2>Problem</h2>
-		<p class="fragment fade-up">
+		<p class="fragment fade-in">
+			A massive amount of time is spent waiting 
+			for images to be retrieved due to Polling
+			and utilization of HTTP/1.1
 		</p>
 	</section>
 	<section>
-	<pre data-id="code-animation"><code class="hljs stretch" data-trim data-line-numbers>
-		</code></pre>
-	</section>	
+		<h2>What is Polling</h2>
+		<img style="background: white" class="fragment fade-in" src="./images/Polling.png" alt="Polling">
+	</section>
 	<section>
-		<h2>Solution</h2>
-		<p>
-		</p>
+		<h2>Why is Polling a Problem</h2>
+		<img class="fragment fade-in" src="./images/ImageBlocking.png" alt="">
+	</section>
+	<section>
+		<h2>Polling Alternatives</h2>
+		<ul>
+			<li class="fragment fade-in">WebSocket</li>
+			<li class="fragment fade-in">Server Sent Events</li>
+		</ul>
+	</section>
+	<section>
+		<h2>What is a WebSocket</h2>
+		<img src="./images/WebSocket.jpg" alt="WebSocket" class="fragment fade-in">
+	</section>
+	<section>
+		<h2>What is a Server Sent Event</h2>
+		<img src="./images/SSE.png" alt="Server Sent Event"class="fragment fade-in">
+	</section>
+	<section>
+		<h2>Suggested Cards #1</h2>
+		<ul>
+			<li class="fragment fade-in">Switch to using Websocks or SSE</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggested Cards #2</h2>
+		<ul>
+			<li class="fragment fade-in">Have the image data ready before it is requested</li>
+			<li class="fragment fade-in">
+				When we know an image is going to be requested,
+				send the request to the necessary database so it
+				is ready when the client asks for it
+			</li>
+		</ul>
+	</section>
+	<section>
+		<h2>Suggested Cards #3</h2>
+		<p class="fragment fade-in">
+			Allow the Client to request
+			multiple images at once</p>
 	</section>
 </section>

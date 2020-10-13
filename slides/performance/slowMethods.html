@@ -2,15 +2,59 @@
 	<section>
 		<h2>Problem</h2>
 		<p class="fragment fade-up">
+			Due to how we split strings, we reprocess
+			extremely large large amounts of data
 		</p>
 	</section>
-	<section>
+	<section data-auto-animate>
 	<pre data-id="code-animation"><code class="hljs stretch" data-trim data-line-numbers>
+	private boolean checkMetaOpen(String buffer) {
+
+        boolean inMeta = false;
+        String[] lines = buffer.split(PlanariaConstants.CRLF);
+        for (String line : lines) {
+
+            // Check for a start GROUP, COMPONENT 
+		// or PRODUCT formulations meta-tag
+            Matcher metaStartMatcher = metaStartPattern.matcher(line);
+            if (metaStartMatcher.find()) {
+                String tag = metaStartMatcher.group(1);
+                boolean found = tag.equals(GROUP_TAG) 
+				|| tag.equals(COMPONENT_TAG) 
+				|| tag.equals(PRODUCT_TAG);
+                inMeta = found ? true : inMeta;
+            }
+
+            // Check for an end GROUP, COMPONENT 
+		// or PRODUCT formulations meta-tag
+            Matcher metaEndMatcher = metaEndPattern.matcher(line);
+            if (metaEndMatcher.find()) {
+                String tag = metaEndMatcher.group(1);
+                boolean found = tag.equals(GROUP_TAG) 
+				|| tag.equals(COMPONENT_TAG) 
+				|| tag.equals(PRODUCT_TAG);
+                inMeta = found ? false : inMeta;
+            }
+        }
+
+        return inMeta;
+    }
+		</code></pre>
+	</section>	
+	<section data-auto-animate>
+	<pre data-id="code-animation"><code class="hljs stretch" data-trim data-line-numbers="4">
+	private boolean checkMetaOpen(String buffer) {
+boolean inMeta = false;
+		...
+        return inMeta;
+    }
 		</code></pre>
 	</section>	
 	<section>
 		<h2>Solution</h2>
-		<p>
+		<p class="fragment fade-in">
+			Find a more optimal way to decide when
+			to break a the buffer
 		</p>
 	</section>
 </section>
