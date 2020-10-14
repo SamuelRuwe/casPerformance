@@ -187,13 +187,6 @@
 			on irrelevant data
 		</p>
 	</section>
-	<section>
-		<h2>Suggested Epic</h2>
-		<p class="fragment fade-up">
-			Find a way to process data only once rather than
-			in multiple areas
-		</p>
-	</section>
 </section>
 
 				<section>
@@ -207,6 +200,7 @@
 		</p>
 	</section>
 	<section>
+		<h2>getResponseBuffer</h2>
 	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|6"><script type="text/template">
 		@Override
     public StringBuilder getResponseBuffer (User user) {
@@ -217,7 +211,10 @@
     }
 		</script></code></pre>
 	</section>	
-	<section><img src="./images/StringBuilderTimes.png" alt="StringBuilder Times"></section>
+	<section>
+		<h2>StringBuilder Times</h2>
+		<img src="./images/StringBuilderTimes.png" alt="StringBuilder Times">
+	</section>
 	<section>
 		<h2>Solution</h2>
 		<p class="fragment fade-up">
@@ -271,6 +268,41 @@
 			Logging Takes a Significant Amount of Time
 		</p>
 	</section>
+	<section>
+		<h2>buildResponseFilterChain</h2>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|13">
+	    @Override
+    public Deque<STNResponseFilter> buildResponseFilterChain () {
+        List<STNResponseFilter> responseFilterChainList = new ArrayList<>();
+
+        SortedMap<Integer, List<STNResponseFilter>> orderToFilterMap = new TreeMap<>();
+
+        for (STNResponseFilter filter : responseFilters) {
+            try {
+                STNResponseFilter newFilter = filter.getClass().newInstance();
+                newFilter.setEventPublisher(publisher);
+                newFilter.setApplicationContext(applicationContext);
+                AspectJProxyFactory factory = new AspectJProxyFactory(newFilter);
+                factory.addAspect(TimeLoggingAspect.class);
+                int order = getFilterOrder(newFilter.getClass());
+
+                if (!orderToFilterMap.containsKey(order)) {
+                    orderToFilterMap.put(order, new ArrayList<>());
+                }
+
+                orderToFilterMap.get(order).add(factory.getProxy());
+            }  catch (InstantiationException | IllegalAccessException e) {
+                LOGGER.warn("Exception attempting to create new instance of a response filter", e);
+            }
+        }
+
+        orderToFilterMap.values().stream().forEach(responseFilterChainList::addAll);
+        LOGGER.debug("The response filter list is {}", responseFilterChainList);
+
+        return new ArrayDeque<>(responseFilterChainList);
+    }
+	</code></pre>
+	</section>	
 	<section>
 		<h2>Solution</h2>
 		<p class="fragment fade-in">
@@ -350,6 +382,7 @@
 		</p>
 	</section>
 	<section data-auto-animate>
+		<h2>Poll And Accumulate History</h2>
 	<pre data-id="code-animation"><code class="javascript" data-trim data-line-numbers>
 function pollAndAccumulateHistory(response) {
    ...
@@ -358,6 +391,7 @@ function pollAndAccumulateHistory(response) {
 		</code></pre>
 	</section>	
 	<section data-auto-animate>
+		<h2>Poll And Accumulate History</h2>
 	<pre data-id="code-animation"><code class="javascript" data-trim data-line-numbers="|5,9,10|17,18,19,20|20|21,22,23,24|25,26,30">
 function pollAndAccumulateHistory(response) {
 
@@ -407,8 +441,10 @@ function pollAndAccumulateHistory(response) {
 		<h2>Suggested Card</h2>
 		<ul>
 			<li class="fragment fade-up">Extract Data Receiving Method from cli.srvc.js</li>
-			<li class="fragment fade-up">Implement Method in both messenger.history.srvc.js and
-			in cli.srvc.js</li>
+			<li class="fragment fade-up">
+				Implement Method in both messenger.history.srvc.js and
+				in cli.srvc.js
+			</li>
 		</ul>
 	</section>
 </section>
@@ -473,10 +509,10 @@ function pollAndAccumulateHistory(response) {
 				<section>
 	<h2 class="fragment fade-in">Key Take Aways</h2>
 	<ul>
-		<li class="fragment fade-in-then-out">Most performance issues have to due with how we process data</li>
-		<li class="fragment fade-in-then-out">There are LOTS of small optimizations that can be made</li>
-		<li class="fragment fade-in-then-out">Objects should only be initialized if they are needed</li>
-		<li class="fragment fade-in-then-out">
+		<li class="fragment fade-in-then-semi-out">Most performance issues have to due with how we process data</li>
+		<li class="fragment fade-in-then-semi-out">There are LOTS of small optimizations that can be made</li>
+		<li class="fragment fade-in-then-semi-out">Objects should only be initialized if they are needed</li>
+		<li class="fragment fade-in-then-semi-out">
 			Methods and objects should be named in a way that
 			tells others what they do
 		</li>
@@ -485,6 +521,30 @@ function pollAndAccumulateHistory(response) {
 			aren't needed in multiple places
 		</li>
 	</ul>
+</section>
+
+
+
+				<section>
+	<section>
+		<h2 class="fragment fade-in">Suggested Epic</h2>
+			<p class="fragment fade-in-then-semi-out">
+				Optimize the processing time of the messenger response
+			</p>
+	</section>
+	<section>
+		<h2>Stories</h2>
+		<ul>
+			<li class="fragment fade-in-then-semi-out">Build a State Machine Diagram for Messenger Processing</li>
+			<li class="fragment fade-in-then-semi-out">Remove Excess Data Transformations/Object Creations</li>
+			<li class="fragment fade-in-then-semi-out">Optimize the heavy lifting methods for performance</li>
+			<li class="fragment fade-in-then-semi-out">Modularize the code so we can find optimized methods easily</li>
+		</ul>
+	</section>
+	<section>
+		<h2>State Machine Diagram</h2>
+		<img class="fragment fade-in" src="./images/StateMachineDiagram.png" alt="">
+	</section>
 </section>
 
 

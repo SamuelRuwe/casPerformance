@@ -6,6 +6,41 @@
 		</p>
 	</section>
 	<section>
+		<h2>buildResponseFilterChain</h2>
+	<pre data-id="code-animation"><code class="java" data-trim data-line-numbers="|13">
+	    @Override
+    public Deque<STNResponseFilter> buildResponseFilterChain () {
+        List<STNResponseFilter> responseFilterChainList = new ArrayList<>();
+
+        SortedMap<Integer, List<STNResponseFilter>> orderToFilterMap = new TreeMap<>();
+
+        for (STNResponseFilter filter : responseFilters) {
+            try {
+                STNResponseFilter newFilter = filter.getClass().newInstance();
+                newFilter.setEventPublisher(publisher);
+                newFilter.setApplicationContext(applicationContext);
+                AspectJProxyFactory factory = new AspectJProxyFactory(newFilter);
+                factory.addAspect(TimeLoggingAspect.class);
+                int order = getFilterOrder(newFilter.getClass());
+
+                if (!orderToFilterMap.containsKey(order)) {
+                    orderToFilterMap.put(order, new ArrayList<>());
+                }
+
+                orderToFilterMap.get(order).add(factory.getProxy());
+            }  catch (InstantiationException | IllegalAccessException e) {
+                LOGGER.warn("Exception attempting to create new instance of a response filter", e);
+            }
+        }
+
+        orderToFilterMap.values().stream().forEach(responseFilterChainList::addAll);
+        LOGGER.debug("The response filter list is {}", responseFilterChainList);
+
+        return new ArrayDeque<>(responseFilterChainList);
+    }
+	</code></pre>
+	</section>	
+	<section>
 		<h2>Solution</h2>
 		<p class="fragment fade-in">
 			Follow through with Wes's Suggestion to switch to
